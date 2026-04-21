@@ -191,7 +191,7 @@
 
   <!-- 入力 -->
   <div class="page active" id="page-input">
-
+    
     <div class="form-card">
       <div class="form-group" id="fg-date">
         <label for="input-date">日付</label>
@@ -301,17 +301,16 @@
 </div>
 
 <script>
-// ===== GAS URL（三茶用）: ここを書き換えてください =====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRQK0c2fQ_zqb2yb2B_7cXD9dtBiOwJ59CzrdlUJYQ9CPzzqommu9S8zZbg1ZbUrPc/exec';
-// =====================================================
 
-const COMPRESS_MAX_SIDE = 1200;
-const COMPRESS_QUALITY  = 0.70;
+const COMPRESS_MAX_SIDE = 1200; // 長辺px
+const COMPRESS_QUALITY  = 0.70; // JPEG品質
 
 let receiptBase64 = null;
 let receiptMime   = null;
 let selectedCategory = null;
 
+// ===== 初期化 =====
 function init() {
   const today = new Date();
   const y = today.getFullYear();
@@ -332,6 +331,7 @@ function onChipClick(e) {
   if (!isOther) document.getElementById('input-category-other').value = '';
 }
 
+// ===== 写真入力（input file方式） =====
 function handleReceiptInput(input) {
   const file = input.files[0];
   if (!file) return;
@@ -384,6 +384,7 @@ function showReceiptPreview(dataUrl) {
 
 function retakeReceipt() { document.getElementById('receipt-input').click(); }
 
+// ===== バリデーション =====
 function validate() {
   let valid = true;
   const checks = [
@@ -430,6 +431,7 @@ function goToConfirm() {
 
 function goBack() { showPage('page-input'); updateSteps(1); }
 
+// ===== 送信（配送管理APIと同方式: URLエンコードPOST） =====
 function submitForm() {
   const displayName = document.getElementById('input-name').value.trim();
   const catVal = selectedCategory === 'その他' ? document.getElementById('input-category-other').value.trim() : selectedCategory;
@@ -465,6 +467,7 @@ function submitForm() {
     .catch(err => { hideLoading(); alert('エラーが発生しました。\n' + err.message); });
 }
 
+// ===== リセット =====
 function resetForm() {
   ['input-category-other','input-payment','input-amount'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('input-name').value = '';
