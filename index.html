@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>経費利用連絡（三茶）</title>
+<style>
+  :root {
+    --color-bg: #fff;
+    --color-section: #f5f5f7;
+    --color-text: #1d1d1f;
+    --color-text-secondary: #6e6e73;
+    --color-blue: #0071e3;
+    --color-border: rgba(0,0,0,0.12);
+    --color-error: #ff3b30;
+    --color-success: #34c759;
+    --font-text: "SF Pro JP","SF Pro Text","SF Pro Icons","Hiragino Kaku Gothic Pro","ヒラギノ角ゴ Pro W3",メイリオ,Meiryo,"ＭＳ Ｐゴシック","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --font-display: "SF Pro JP","SF Pro Display","SF Pro Icons","Hiragino Kaku Gothic Pro","ヒラギノ角ゴ Pro W3",メイリオ,Meiryo,"ＭＳ Ｐゴシック","Helvetica Neue",Helvetica,Arial,sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-text); font-size: 17px;
+    line-height: 1.47; letter-spacing: -0.357px;
+    color: var(--color-text); background: var(--color-bg);
+    -webkit-font-smoothing: antialiased; min-height: 100vh;
+  }
+  header {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky; top: 0; z-index: 100;
+    height: 52px; display: flex; align-items: center; justify-content: center;
+  }
+  header h1 { font-family: var(--font-display); font-size: 17px; font-weight: 600; letter-spacing: normal; }
+  main { max-width: 600px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* ステップ */
+  .steps { display: flex; align-items: center; justify-content: center; margin-bottom: 40px; }
+  .step-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--color-section); border: 2px solid var(--color-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 600; color: var(--color-text-secondary);
+    transition: all 0.3s ease;
+  }
+  .step-dot.active { background: var(--color-blue); border-color: var(--color-blue); color: #fff; }
+  .step-dot.done { background: var(--color-success); border-color: var(--color-success); color: #fff; }
+  .step-label { font-size: 11px; color: var(--color-text-secondary); }
+  .step-line { width: 60px; height: 2px; background: var(--color-border); margin-bottom: 20px; transition: background 0.3s; }
+  .step-line.done { background: var(--color-success); }
+
+  .page-title { font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.14; letter-spacing: 0.196px; margin-bottom: 32px; text-align: center; }
+  .form-card { background: var(--color-section); border-radius: 18px; padding: 28px 24px; margin-bottom: 16px; }
+  .form-group { margin-bottom: 24px; }
+  .form-group:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 8px; letter-spacing: 0.2px; text-transform: uppercase; }
+
+  input[type="date"], input[type="text"], input[type="number"], select {
+    width: 100%; padding: 12px 16px;
+    font-family: var(--font-text); font-size: 17px; line-height: 1.47; letter-spacing: -0.357px;
+    color: var(--color-text); background: #fff;
+    border: 1.5px solid var(--color-border); border-radius: 12px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { border-color: var(--color-blue); box-shadow: 0 0 0 3px rgba(0,113,227,0.2); }
+
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: ''; position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    border-left: 5px solid transparent; border-right: 5px solid transparent;
+    border-top: 6px solid var(--color-text-secondary); pointer-events: none;
+  }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    padding: 8px 18px; border-radius: 980px;
+    border: 1.5px solid var(--color-border); background: #fff;
+    font-family: var(--font-text); font-size: 15px; color: var(--color-text);
+    cursor: pointer; transition: all 0.2s; letter-spacing: -0.2px;
+  }
+  .chip:hover { border-color: var(--color-blue); color: var(--color-blue); }
+  .chip.selected { background: var(--color-blue); border-color: var(--color-blue); color: #fff; font-weight: 500; }
+
+  .notice { background: rgba(255,149,0,0.1); border-left: 3px solid #ff9500; border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 14px; line-height: 1.5; margin-top: 8px; }
+
+  .amount-wrap { position: relative; }
+  .amount-prefix { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 17px; color: var(--color-text-secondary); pointer-events: none; }
+  .amount-wrap input { padding-left: 30px; }
+
+  /* レシート */
+  .receipt-area {
+    border: 2px dashed var(--color-border); border-radius: 12px;
+    background: #fff; padding: 24px; text-align: center;
+    cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .receipt-area:hover { border-color: var(--color-blue); background: rgba(0,113,227,0.03); }
+  .receipt-area.has-photo { border-style: solid; border-color: var(--color-success); }
+  .receipt-icon { font-size: 36px; margin-bottom: 8px; display: block; }
+  .receipt-label { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .receipt-hint { font-size: 13px; color: var(--color-text-secondary); opacity: 0.7; }
+  .receipt-preview { max-width: 100%; max-height: 200px; border-radius: 8px; display: none; margin: 0 auto; }
+  .receipt-preview.show { display: block; }
+  .receipt-retake { display: none; margin-top: 10px; font-size: 14px; color: var(--color-blue); cursor: pointer; }
+  .receipt-retake.show { display: inline; }
+  .receipt-area { cursor: pointer; }
+
+  .error-msg { font-size: 13px; color: var(--color-error); margin-top: 6px; display: none; }
+  .error-msg.show { display: block; }
+  .field-error input, .field-error select, .field-error .receipt-area { border-color: var(--color-error) !important; }
+
+  .btn-primary {
+    display: block; width: 100%; padding: 16px 22px;
+    background: var(--color-blue); color: #fff;
+    font-family: var(--font-text); font-size: 17px; font-weight: 400;
+    border: none; border-radius: 980px; cursor: pointer;
+    transition: background 0.2s, transform 0.1s; margin-top: 24px;
+  }
+  .btn-primary:hover { background: #0077ed; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: #c7c7cc; cursor: not-allowed; }
+
+  .btn-outline {
+    display: block; width: 100%; padding: 14px 22px;
+    background: transparent; color: var(--color-blue);
+    font-family: var(--font-text); font-size: 17px;
+    border: 1.5px solid var(--color-blue); border-radius: 980px;
+    cursor: pointer; transition: all 0.2s; margin-top: 12px;
+  }
+  .btn-outline:hover { background: rgba(0,113,227,0.06); }
+
+  /* 確認 */
+  .confirm-table { background: #fff; border-radius: 14px; overflow: hidden; border: 1px solid var(--color-border); }
+  .confirm-row { display: flex; border-bottom: 1px solid var(--color-border); }
+  .confirm-row:last-child { border-bottom: none; }
+  .confirm-key { width: 120px; min-width: 120px; padding: 14px 16px; font-size: 14px; font-weight: 600; color: var(--color-text-secondary); background: var(--color-section); }
+  .confirm-val { padding: 14px 16px; font-size: 16px; flex: 1; word-break: break-all; }
+  .confirm-val.amount { font-weight: 600; font-size: 18px; }
+  .receipt-thumb { max-width: 100%; max-height: 120px; border-radius: 8px; margin-top: 4px; display: block; }
+
+  /* 完了 */
+  .complete-wrap { text-align: center; padding: 40px 0; }
+  .complete-icon {
+    width: 72px; height: 72px; background: var(--color-success); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+    animation: popIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .complete-title { font-family: var(--font-display); font-size: 24px; font-weight: 600; margin-bottom: 12px; }
+  .complete-sub { font-size: 15px; color: var(--color-text-secondary); line-height: 1.6; margin-bottom: 32px; }
+
+  /* ローディング */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+    z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--color-border); border-top-color: var(--color-blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 15px; color: var(--color-text-secondary); }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    main { padding: 28px 16px 80px; }
+    .page-title { font-size: 22px; }
+    .form-card { padding: 20px 16px; }
+    .confirm-key { width: 90px; min-width: 90px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header><h1>経費利用連絡（三茶）</h1></header>
+
+<main>
+  <div class="steps">
+    <div class="step-item"><div class="step-dot active" id="dot1">1</div><div class="step-label">入力</div></div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-item"><div class="step-dot" id="dot2">2</div><div class="step-label">確認</div></div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-item"><div class="step-dot" id="dot3">3</div><div class="step-label">完了</div></div>
+  </div>
+
+  <!-- 入力 -->
+  <div class="page active" id="page-input">
+
+    <div class="form-card">
+      <div class="form-group" id="fg-date">
+        <label for="input-date">日付</label>
+        <input type="date" id="input-date">
+        <div class="error-msg" id="err-date">日付を入力してください</div>
+      </div>
+      <div class="form-group" id="fg-name">
+        <label for="input-name">名前</label>
+        <input type="text" id="input-name" placeholder="氏名を入力してください">
+        <div class="error-msg" id="err-name">名前を入力してください</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-group" id="fg-category">
+        <label>内容</label>
+        <div class="chip-group" id="chip-group">
+          <button type="button" class="chip" data-value="原材料">原材料</button>
+          <button type="button" class="chip" data-value="消耗品（資材、備品、印刷）">消耗品（資材、備品、印刷）</button>
+          <button type="button" class="chip" data-value="車両（給油、オイル交換、修理）">車両（給油、オイル交換、修理）</button>
+          <button type="button" class="chip" data-value="駐車場">駐車場</button>
+          <button type="button" class="chip" data-value="その他">その他</button>
+        </div>
+        <div class="error-msg" id="err-category">内容を選択してください</div>
+      </div>
+      <div class="form-group hidden" id="fg-category-other">
+        <label for="input-category-other">内容を入力</label>
+        <input type="text" id="input-category-other" placeholder="内容を入力してください">
+        <div class="error-msg" id="err-category-other">内容を入力してください</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-group" id="fg-payment">
+        <label for="input-payment">支払方法</label>
+        <div class="select-wrap">
+          <select id="input-payment">
+            <option value="">選択してください</option>
+            <option value="現金">現金</option>
+            <option value="カード（末尾0781）">カード（末尾0781）</option>
+            <option value="カード（末尾1093）">カード（末尾1093）</option>
+          </select>
+        </div>
+        <div class="notice">※ 選択肢に無い支払方法や個人の立替の場合は、この画面からの入力ではなく社員に連絡してください。</div>
+        <div class="error-msg" id="err-payment">支払方法を選択してください</div>
+      </div>
+      <div class="form-group" id="fg-amount">
+        <label for="input-amount">税込金額</label>
+        <div class="amount-wrap">
+          <span class="amount-prefix">¥</span>
+          <input type="number" id="input-amount" min="1" placeholder="0" inputmode="numeric">
+        </div>
+        <div class="error-msg" id="err-amount">金額を入力してください</div>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-group" id="fg-receipt">
+        <label>レシート写真</label>
+
+        <div class="receipt-area" id="receipt-area" onclick="document.getElementById('receipt-input').click()">
+          <span class="receipt-icon" id="receipt-icon">📷</span>
+          <div class="receipt-label" id="receipt-label">タップして撮影</div>
+          <div class="receipt-hint">カメラが起動します（必須）</div>
+          <img class="receipt-preview" id="receipt-preview" alt="レシートプレビュー">
+        </div>
+        <input type="file" id="receipt-input" accept="image/*" capture="environment" style="display:none;" onchange="handleReceiptInput(this)">
+        <span class="receipt-retake" id="receipt-retake" onclick="document.getElementById('receipt-input').click()">📷 撮り直す</span>
+        <div class="error-msg" id="err-receipt">レシート写真を撮影してください</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="goToConfirm()">確認画面へ</button>
+  </div>
+
+  <!-- 確認 -->
+  <div class="page" id="page-confirm">
+    <h2 class="page-title">内容を確認</h2>
+    <div class="form-card" style="padding:0;overflow:hidden;">
+      <div class="confirm-table" style="border:none;border-radius:0;">
+        <div class="confirm-row"><div class="confirm-key">日付</div><div class="confirm-val" id="cv-date"></div></div>
+        <div class="confirm-row"><div class="confirm-key">名前</div><div class="confirm-val" id="cv-name"></div></div>
+        <div class="confirm-row"><div class="confirm-key">内容</div><div class="confirm-val" id="cv-category"></div></div>
+        <div class="confirm-row"><div class="confirm-key">支払方法</div><div class="confirm-val" id="cv-payment"></div></div>
+        <div class="confirm-row"><div class="confirm-key">税込金額</div><div class="confirm-val amount" id="cv-amount"></div></div>
+        <div class="confirm-row"><div class="confirm-key">レシート</div><div class="confirm-val"><img class="receipt-thumb" id="cv-receipt-img" alt="レシート"></div></div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="submitForm()">送信する</button>
+    <button class="btn-outline" onclick="goBack()">修正する</button>
+  </div>
+
+  <!-- 完了 -->
+  <div class="page" id="page-complete">
+    <div class="complete-wrap">
+      <div class="complete-icon">✓</div>
+      <div class="complete-title">送信しました</div>
+      <div class="complete-sub">申請内容がスプレッドシートに<br>記録されました。</div>
+      <button class="btn-primary" onclick="resetForm()">続けて申請する</button>
+    </div>
+  </div>
+</main>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">送信中...</div>
+</div>
+
+<script>
+// ===== GAS URL（三茶用）: ここを書き換えてください =====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwRQK0c2fQ_zqb2yb2B_7cXD9dtBiOwJ59CzrdlUJYQ9CPzzqommu9S8zZbg1ZbUrPc/exec';
+// =====================================================
+
+const COMPRESS_MAX_SIDE = 1200;
+const COMPRESS_QUALITY  = 0.70;
+
+let receiptBase64 = null;
+let receiptMime   = null;
+let selectedCategory = null;
+
+function init() {
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('input-date').value = `${y}-${m}-${d}`;
+
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', onChipClick));
+}
+
+function onChipClick(e) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  e.currentTarget.classList.add('selected');
+  selectedCategory = e.currentTarget.dataset.value;
+  clearError('fg-category','err-category');
+  const isOther = selectedCategory === 'その他';
+  document.getElementById('fg-category-other').classList.toggle('hidden', !isOther);
+  if (!isOther) document.getElementById('input-category-other').value = '';
+}
+
+function handleReceiptInput(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showLoading('写真を圧縮中...');
+  compressImage(file, COMPRESS_MAX_SIDE, COMPRESS_QUALITY)
+    .then(base64 => {
+      receiptBase64 = base64;
+      receiptMime   = 'image/jpeg';
+      hideLoading();
+      showReceiptPreview('data:image/jpeg;base64,' + base64);
+    })
+    .catch(() => { hideLoading(); alert('画像の読み込みに失敗しました'); });
+}
+
+function compressImage(file, maxSide, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSide || height > maxSide) {
+        if (width > height) {
+          height = Math.round(height * maxSide / width);
+          width = maxSide;
+        } else {
+          width = Math.round(width * maxSide / height);
+          height = maxSide;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function showReceiptPreview(dataUrl) {
+  const preview = document.getElementById('receipt-preview');
+  preview.src = dataUrl;
+  preview.classList.add('show');
+  document.getElementById('receipt-icon').style.display  = 'none';
+  document.getElementById('receipt-label').style.display = 'none';
+  document.getElementById('receipt-area').classList.add('has-photo');
+  document.getElementById('receipt-retake').classList.add('show');
+  clearError('fg-receipt','err-receipt');
+}
+
+function retakeReceipt() { document.getElementById('receipt-input').click(); }
+
+function validate() {
+  let valid = true;
+  const checks = [
+    [() => !document.getElementById('input-date').value,   'fg-date',    'err-date'],
+    [() => !document.getElementById('input-name').value,   'fg-name',    'err-name'],
+    [() => !selectedCategory,                               'fg-category','err-category'],
+    [() => !document.getElementById('input-payment').value,'fg-payment', 'err-payment'],
+    [() => !document.getElementById('input-amount').value || Number(document.getElementById('input-amount').value) <= 0, 'fg-amount', 'err-amount'],
+    [() => !receiptBase64, 'fg-receipt','err-receipt'],
+  ];
+  checks.forEach(([test, fg, err]) => {
+    if (test()) { showError(fg, err); valid = false; } else clearError(fg, err);
+  });
+  if (selectedCategory === 'その他') {
+    if (!document.getElementById('input-category-other').value.trim()) { showError('fg-category-other','err-category-other'); valid = false; }
+    else clearError('fg-category-other','err-category-other');
+  }
+  return valid;
+}
+
+function showError(fgId, errId) { document.getElementById(fgId).classList.add('field-error'); document.getElementById(errId).classList.add('show'); }
+function clearError(fgId, errId) { document.getElementById(fgId).classList.remove('field-error'); document.getElementById(errId).classList.remove('show'); }
+
+function goToConfirm() {
+  if (!validate()) {
+    const first = document.querySelector('.field-error');
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const displayName = document.getElementById('input-name').value.trim();
+  const catVal = selectedCategory === 'その他' ? document.getElementById('input-category-other').value.trim() : selectedCategory;
+  const [y, mo, d] = document.getElementById('input-date').value.split('-');
+
+  document.getElementById('cv-date').textContent     = `${y}年${mo}月${d}日`;
+  document.getElementById('cv-name').textContent     = displayName;
+  document.getElementById('cv-category').textContent = catVal;
+  document.getElementById('cv-payment').textContent  = document.getElementById('input-payment').value;
+  document.getElementById('cv-amount').textContent   = '¥' + Number(document.getElementById('input-amount').value).toLocaleString();
+  document.getElementById('cv-receipt-img').src      = 'data:image/jpeg;base64,' + receiptBase64;
+
+  showPage('page-confirm');
+  updateSteps(2);
+}
+
+function goBack() { showPage('page-input'); updateSteps(1); }
+
+function submitForm() {
+  const displayName = document.getElementById('input-name').value.trim();
+  const catVal = selectedCategory === 'その他' ? document.getElementById('input-category-other').value.trim() : selectedCategory;
+
+  const payload = {
+    action: 'submitExpense',
+    date:          document.getElementById('input-date').value,
+    name:          displayName,
+    category:      catVal,
+    paymentMethod: document.getElementById('input-payment').value,
+    amount:        document.getElementById('input-amount').value,
+    receiptBase64: receiptBase64,
+    receiptMime:   receiptMime,
+  };
+
+  showLoading('送信中...');
+
+  fetch(GAS_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    'payload=' + encodeURIComponent(JSON.stringify(payload)),
+  })
+    .then(r => r.json())
+    .then(data => {
+      hideLoading();
+      if (data.status === 'ok') {
+        showPage('page-complete');
+        updateSteps(3);
+      } else {
+        alert('送信に失敗しました。\n' + (data.message || ''));
+      }
+    })
+    .catch(err => { hideLoading(); alert('エラーが発生しました。\n' + err.message); });
+}
+
+function resetForm() {
+  ['input-category-other','input-payment','input-amount'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('input-name').value = '';
+  document.getElementById('fg-category-other').classList.add('hidden');
+  selectedCategory = null; receiptBase64 = null; receiptMime = null;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  document.getElementById('receipt-preview').classList.remove('show');
+  document.getElementById('receipt-preview').src = '';
+  document.getElementById('receipt-icon').style.display  = '';
+  document.getElementById('receipt-label').style.display = '';
+  document.getElementById('receipt-area').classList.remove('has-photo');
+  document.getElementById('receipt-retake').classList.remove('show');
+
+  const today = new Date();
+  document.getElementById('input-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  showPage('page-input');
+  updateSteps(1);
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function updateSteps(step) {
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.classList.remove('active','done');
+    if (i < step) dot.classList.add('done'); else if (i === step) dot.classList.add('active');
+  }
+  for (let i = 1; i <= 2; i++) document.getElementById('line' + i).classList.toggle('done', i < step);
+}
+function showLoading(msg) { document.getElementById('loading-text').textContent = msg || '処理中...'; document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
