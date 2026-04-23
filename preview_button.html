@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>送信ボタン プレビュー</title>
+<style>
+  :root {
+    --color-blue: #0071e3;
+    --color-success: #34c759;
+    --font: "SF Pro JP","Hiragino Kaku Gothic Pro",メイリオ,sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font);
+    background: #f5f5f7;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; gap: 48px; padding: 40px 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h2 {
+    font-size: 13px; font-weight: 600; color: #6e6e73;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    margin-bottom: -32px;
+  }
+
+  /* ===== 共通ボタンベース ===== */
+  .btn-primary {
+    display: block; width: 320px; padding: 16px 22px;
+    background: var(--color-blue); color: #fff;
+    font-family: var(--font); font-size: 17px; font-weight: 400;
+    border: none; border-radius: 980px; cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    position: relative; overflow: hidden;
+    text-align: center;
+  }
+  .btn-primary:hover { background: #0077ed; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ===== 送信中: ストライプアニメーション ===== */
+  .btn-primary.btn-sending {
+    pointer-events: none;
+    background: var(--color-blue);
+  }
+  .btn-primary.btn-sending::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      -60deg,
+      transparent,
+      transparent 10px,
+      rgba(255,255,255,0.18) 10px,
+      rgba(255,255,255,0.18) 20px
+    );
+    background-size: 28px 100%;
+    animation: stripeMove 0.7s linear infinite;
+  }
+  @keyframes stripeMove {
+    from { background-position-x: 0; }
+    to   { background-position-x: 28px; }
+  }
+
+  /* ===== 完了: 緑 ===== */
+  .btn-primary.done {
+    background: var(--color-success);
+    pointer-events: none;
+    cursor: default;
+    animation: donePop 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes donePop {
+    0%   { transform: scale(0.95); }
+    60%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  /* ===== デモ用オートプレイ ===== */
+  .demo-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 16px;
+  }
+  .demo-label {
+    font-size: 12px; color: #6e6e73;
+    background: rgba(0,0,0,0.06); padding: 4px 12px;
+    border-radius: 980px;
+  }
+
+  .separator {
+    width: 320px; border: none;
+    border-top: 1px solid rgba(0,0,0,0.1);
+  }
+
+  .auto-demo {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 12px;
+  }
+  .auto-demo p {
+    font-size: 13px; color: #6e6e73; text-align: center;
+    line-height: 1.5;
+  }
+  #demo-btn {
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- 状態①: 通常 -->
+<h2>状態の比較</h2>
+
+<div class="demo-wrap">
+  <button class="btn-primary">送信する</button>
+  <span class="demo-label">① 通常（クリック前）</span>
+</div>
+
+<div class="demo-wrap">
+  <button class="btn-primary btn-sending">送信中...</button>
+  <span class="demo-label">② 送信中（ストライプアニメーション）</span>
+</div>
+
+<div class="demo-wrap">
+  <button class="btn-primary done">✓ 送信完了</button>
+  <span class="demo-label">③ 完了（緑）</span>
+</div>
+
+<hr class="separator">
+
+<!-- インタラクティブデモ -->
+<div class="auto-demo">
+  <h2 style="margin-bottom:0">インタラクティブデモ</h2>
+  <p>ボタンを押すと遷移を確認できます</p>
+  <button class="btn-primary" id="demo-btn" onclick="runDemo()">送信する</button>
+</div>
+
+<script>
+function runDemo() {
+  const btn = document.getElementById('demo-btn');
+  // ① → ② 送信中
+  btn.classList.add('btn-sending');
+  btn.textContent = '送信中...';
+
+  // ② → ③ 完了（2秒後）
+  setTimeout(() => {
+    btn.classList.remove('btn-sending');
+    btn.classList.add('done');
+    btn.textContent = '✓ 送信完了';
+
+    // リセット（3秒後）
+    setTimeout(() => {
+      btn.classList.remove('done');
+      btn.textContent = '送信する';
+    }, 3000);
+  }, 2000);
+}
+</script>
+</body>
+</html>

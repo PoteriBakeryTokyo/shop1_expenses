@@ -117,10 +117,41 @@
     font-family: var(--font-text); font-size: 17px; font-weight: 400;
     border: none; border-radius: 980px; cursor: pointer;
     transition: background 0.2s, transform 0.1s; margin-top: 24px;
+    position: relative; overflow: hidden;
   }
   .btn-primary:hover { background: #0077ed; }
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary:disabled { background: #c7c7cc; cursor: not-allowed; }
+
+  .btn-primary.btn-sending {
+    pointer-events: none;
+    background: var(--color-blue);
+  }
+  .btn-primary.btn-sending::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      -60deg,
+      transparent, transparent 10px,
+      rgba(255,255,255,0.18) 10px, rgba(255,255,255,0.18) 20px
+    );
+    background-size: 28px 100%;
+    animation: stripeMove 0.7s linear infinite;
+  }
+  @keyframes stripeMove {
+    from { background-position-x: 0; }
+    to   { background-position-x: 28px; }
+  }
+  .btn-primary.done {
+    background: var(--color-success);
+    pointer-events: none;
+    animation: donePop 0.35s cubic-bezier(0.175,0.885,0.32,1.275);
+  }
+  @keyframes donePop {
+    0%   { transform: scale(0.95); }
+    60%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
 
   .btn-outline {
     display: block; width: 100%; padding: 14px 22px;
@@ -280,7 +311,7 @@
         <div class="confirm-row"><div class="confirm-key">レシート</div><div class="confirm-val"><img class="receipt-thumb" id="cv-receipt-img" alt="レシート"></div></div>
       </div>
     </div>
-    <button class="btn-primary" onclick="submitForm()">送信する</button>
+    <button class="btn-primary" id="btn-submit" onclick="submitForm()">送信する</button>
     <button class="btn-outline" onclick="goBack()">修正する</button>
   </div>
 
@@ -433,6 +464,7 @@ function goBack() { showPage('page-input'); updateSteps(1); }
 
 // ===== 送信（配送管理APIと同方式: URLエンコードPOST） =====
 function submitForm() {
+  const btn = document.getElementById('btn-submit');
   const displayName = document.getElementById('input-name').value.trim();
   const catVal = selectedCategory === 'その他' ? document.getElementById('input-category-other').value.trim() : selectedCategory;
 
@@ -447,7 +479,8 @@ function submitForm() {
     receiptMime:   receiptMime,
   };
 
-  showLoading('送信中...');
+  btn.classList.add('btn-sending');
+  btn.textContent = '送信中...';
 
   fetch(GAS_URL, {
     method:  'POST',
@@ -456,15 +489,27 @@ function submitForm() {
   })
     .then(r => r.json())
     .then(data => {
-      hideLoading();
       if (data.status === 'ok') {
-        showPage('page-complete');
-        updateSteps(3);
+        btn.classList.remove('btn-sending');
+        btn.classList.add('done');
+        btn.textContent = '✓ 送信完了';
+        setTimeout(() => {
+          btn.classList.remove('done');
+          btn.textContent = '送信する';
+          showPage('page-complete');
+          updateSteps(3);
+        }, 800);
       } else {
+        btn.classList.remove('btn-sending');
+        btn.textContent = '送信する';
         alert('送信に失敗しました。\n' + (data.message || ''));
       }
     })
-    .catch(err => { hideLoading(); alert('エラーが発生しました。\n' + err.message); });
+    .catch(err => {
+      btn.classList.remove('btn-sending');
+      btn.textContent = '送信する';
+      alert('エラーが発生しました。\n' + err.message);
+    });
 }
 
 // ===== リセット =====
